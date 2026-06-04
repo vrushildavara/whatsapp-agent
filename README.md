@@ -2,65 +2,56 @@
 
 A production-ready WhatsApp chatbot powered by AI (Google Gemini), with intelligent conversation management, long-term memory (Mem0), and automatic response handling.
 
+---
+
 ## ✨ Features
 
-- 🔄 **Automatic Message Handling** - Receives and responds to WhatsApp messages automatically
-- 🧠 **AI-Powered Responses** - Uses Google Gemini for intelligent conversations
-- 💾 **Long-Term Memory** - Remembers user preferences and context using Mem0
-- 📝 **Smart Summarization** - Automatically summarizes conversations every 20 messages
-- ⏱️ **Debouncing** - Waits for user to finish typing before responding (3s delay)
-- 🔐 **Multi-Account Support** - Handle multiple WhatsApp Business accounts
-- 📊 **Conversation Context** - Maintains rolling summaries + recent messages
-- 🎯 **Production Ready** - Async/await, error handling, database transactions
+* 🔄 **Automatic Message Handling** — Receives and responds to WhatsApp messages automatically
+* 🧠 **AI-Powered Responses** — Uses Google Gemini for intelligent conversations
+* 💾 **Long-Term Memory** — Remembers user preferences and context using Mem0
+* 📝 **Smart Summarization** — Automatically summarizes conversations every 20 messages
+* ⏱️ **Debouncing** — Waits for user to finish typing before responding (3s delay)
+* 🔐 **Multi-Account Support** — Handle multiple WhatsApp Business accounts
+* 📊 **Conversation Context** — Maintains rolling summaries + recent messages
+* 🎯 **Production Ready** — Async/await, error handling, database transactions
+
+---
 
 ## 🏗️ Architecture
 
+```text
+WhatsApp User
+      │
+      ▼
+Meta WhatsApp API
+      │
+      ▼
+FastAPI Webhook (/message/webhook)
+      │
+      ├── Parse webhook payload
+      ├── Get account credentials
+      ├── Save message to PostgreSQL
+      └── Start debounce timer (3s)
+      │
+      ▼
+_generate_assistant_response()
+      │
+      ├── Check if 20 messages → Summarize
+      ├── Fetch recent messages
+      ├── Query Mem0 memories
+      ├── Build conversation context
+      ├── Call Gemini API
+      ├── Save assistant response
+      └── Send response to WhatsApp API
+      │
+      ▼
+Meta WhatsApp API
+      │
+      ▼
+WhatsApp User Receives AI Response
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         WhatsApp User                            │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ Sends "Hi"
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    Meta WhatsApp API                             │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ Webhook POST
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    Your FastAPI Server                           │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  POST /message/webhook                                    │  │
-│  │    ↓                                                      │  │
-│  │  1. Parse webhook payload                                │  │
-│  │  2. Get account credentials (phone_number_id → token)    │  │
-│  │  3. Save user message to PostgreSQL                      │  │
-│  │  4. Start debounce timer (3 seconds)                     │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                            ↓                                     │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  _generate_assistant_response()                          │  │
-│  │    ↓                                                      │  │
-│  │  1. Check if 20 messages → Summarize                     │  │
-│  │  2. Fetch last 20 unsummarized messages                  │  │
-│  │  3. Query Mem0 for relevant memories                     │  │
-│  │  4. Build context: Summary + Memories + Recent           │  │
-│  │  5. Call Gemini API for AI response                      │  │
-│  │  6. Save assistant message to DB                         │  │
-│  │  7. Send response to WhatsApp API ← NEW!                 │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ Send message
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    Meta WhatsApp API                             │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │ Delivers message
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                         WhatsApp User                            │
-│                    Receives AI Response                          │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+---
 
 ## 🚀 Quick Start
 
@@ -102,25 +93,27 @@ uvicorn app.main:app --reload
 
 ### 5. Register WhatsApp Account
 
-```bash
-# First, create user and login
+```http
 POST http://localhost:8000/users/register
 {
   "name": "Your Name",
   "email": "your@email.com",
   "password": "password123"
 }
+```
 
-# Login to get JWT token
+```http
 POST http://localhost:8000/users/login
 {
   "email": "your@email.com",
   "password": "password123"
 }
+```
 
-# Register WhatsApp Business account
+```http
 POST http://localhost:8000/account/create
 Authorization: Bearer YOUR_JWT_TOKEN
+
 {
   "phone_number": "15551470370",
   "phone_id": "799278879941922",
@@ -130,122 +123,160 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ### 6. Configure Webhook (Meta Developer Console)
 
-1. Go to https://developers.facebook.com/apps/
+1. Go to Meta Developers Console
 2. Select your app → WhatsApp → Configuration
-3. Set Webhook URL: `https://your-domain.com/message/webhook`
-4. Set Verify Token: (same as `WHATSAPP_VERIFY_TOKEN` in .env)
-5. Subscribe to `messages` field
+3. Set Webhook URL:
 
-### 7. Test!
+   ```text
+   https://your-domain.com/message/webhook
+   ```
+4. Set Verify Token (same as `WHATSAPP_VERIFY_TOKEN`)
+5. Subscribe to the `messages` field
 
-Send a WhatsApp message to your business number. The bot will respond automatically! 🎉
+### 7. Test
+
+Send a WhatsApp message to your business number. The bot will respond automatically. 🎉
+
+---
 
 ## 📚 Documentation
 
-- [WHATSAPP_SETUP.md](WHATSAPP_SETUP.md) - Detailed setup instructions
-- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing procedures and debugging
-- [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Technical implementation details
+* `WHATSAPP_SETUP.md` — Detailed setup instructions
+* `TESTING_GUIDE.md` — Testing procedures and debugging
+* `IMPLEMENTATION_SUMMARY.md` — Technical implementation details
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Backend**: FastAPI (Python 3.12+)
-- **Database**: PostgreSQL with SQLAlchemy (async)
-- **AI/LLM**: Google Gemini API
-- **Memory**: Mem0 (long-term memory service)
-- **Storage**: AWS S3 (media files)
-- **Auth**: JWT tokens
-- **Migrations**: Alembic
+| Component      | Technology                    |
+| -------------- | ----------------------------- |
+| Backend        | FastAPI (Python 3.12+)        |
+| Database       | PostgreSQL + SQLAlchemy Async |
+| AI/LLM         | Google Gemini                 |
+| Memory         | Mem0                          |
+| Storage        | AWS S3                        |
+| Authentication | JWT                           |
+| Migrations     | Alembic                       |
+
+---
 
 ## 📁 Project Structure
 
-```
+```text
 whatsapp-agents/
 ├── src/app/
-│   ├── controller/          # Business logic
-│   │   └── message_controller.py  # Webhook + message handling
-│   ├── service/             # External services
-│   │   ├── whatsapp_service.py    # WhatsApp API integration
-│   │   ├── llm_service.py         # Gemini AI
-│   │   ├── mem0_service.py        # Long-term memory
-│   │   └── summary_service.py     # Conversation summarization
-│   ├── router/              # API endpoints
-│   │   └── message_router.py      # Webhook endpoints
-│   ├── models/              # Database models
-│   ├── validation/          # Pydantic schemas
-│   │   └── webhook_validation.py  # WhatsApp webhook schema
-│   └── utils/               # Helpers
-│       └── session_processor.py   # Debouncing logic
-├── alembic/                 # Database migrations
-└── .env                     # Configuration
+│   ├── controller/
+│   │   └── message_controller.py
+│   ├── service/
+│   │   ├── whatsapp_service.py
+│   │   ├── llm_service.py
+│   │   ├── mem0_service.py
+│   │   └── summary_service.py
+│   ├── router/
+│   │   └── message_router.py
+│   ├── models/
+│   ├── validation/
+│   │   └── webhook_validation.py
+│   └── utils/
+│       └── session_processor.py
+├── alembic/
+└── .env
 ```
+
+---
 
 ## 🔑 Key Features Explained
 
-### Debouncing (3-second delay)
-Prevents multiple AI responses when user sends rapid messages. Waits 3 seconds after last message before generating response.
+### Debouncing (3-Second Delay)
+
+Prevents multiple AI responses when users send rapid messages. The system waits 3 seconds after the last message before generating a response.
 
 ### Chunked Summarization
-Every 20 messages are automatically summarized into a rolling summary (≤150 words). Keeps context manageable for LLM.
+
+Every 20 messages are automatically summarized into a rolling summary (≤150 words), keeping context manageable for the LLM.
 
 ### Context Building
-- **Short-term**: Last 20 unsummarized messages
-- **Long-term**: Mem0 memories + conversation summary
-- **Result**: AI has full context without token overflow
+
+* **Short-Term Memory** → Last 20 unsummarized messages
+* **Long-Term Memory** → Mem0 memories + conversation summaries
+* **Result** → Rich context without token overflow
 
 ### Multi-Account Support
-Each WhatsApp Business account has its own credentials. System identifies account by `phone_number_id` from webhook.
+
+Each WhatsApp Business account maintains its own credentials. The system identifies the correct account using `phone_number_id` from incoming webhooks.
+
+---
 
 ## 🐛 Troubleshooting
 
-### Webhook verification fails
-- Check `WHATSAPP_VERIFY_TOKEN` in `.env` matches Meta console
+### Webhook Verification Fails
 
-### Bot doesn't respond
-- Check `GEMINI_API_KEY` and `MEM0_API_KEY` are valid
-- Check database connection
-- Check server logs for errors
+* Verify `WHATSAPP_VERIFY_TOKEN` matches the Meta Developer Console configuration.
 
-### Message not saved
-- Verify database is running
-- Check `DATABASE_URL` is correct
-- Run migrations: `alembic upgrade head`
+### Bot Doesn't Respond
+
+* Verify `GEMINI_API_KEY`
+* Verify `MEM0_API_KEY`
+* Verify database connectivity
+* Check application logs
+
+### Messages Not Saved
+
+* Verify PostgreSQL is running
+* Verify `DATABASE_URL`
+* Run:
+
+```bash
+alembic upgrade head
+```
+
+---
 
 ## 📊 API Endpoints
 
 ### Authentication
-- `POST /users/register` - Register new user
-- `POST /users/login` - Login and get JWT token
+
+* `POST /users/register`
+* `POST /users/login`
 
 ### WhatsApp Accounts
-- `POST /account/create` - Register WhatsApp Business account
-- `GET /account/{id}` - Get account details
 
-### Messages (Webhook)
-- `GET /message/webhook` - Webhook verification
-- `POST /message/webhook` - Receive incoming messages
+* `POST /account/create`
+* `GET /account/{id}`
+
+### Webhook
+
+* `GET /message/webhook`
+* `POST /message/webhook`
+
+---
 
 ## 🤝 Contributing
 
-This is a production-ready system. Follow the existing code patterns:
-- Async/await for all I/O operations
-- Service layer for business logic
-- Pydantic for validation
-- Type hints everywhere
+Follow existing project patterns:
+
+* Async/await for all I/O
+* Service layer architecture
+* Pydantic validation
+* Type hints throughout the codebase
+
+---
 
 ## 📄 License
 
 [Your License Here]
 
+---
+
 ## 🎉 Success!
 
-Your WhatsApp AI agent is now:
-- ✅ Receiving messages automatically
-- ✅ Processing with AI intelligence
-- ✅ Sending responses automatically
-- ✅ Maintaining conversation context
-- ✅ Handling multiple users simultaneously
+Your WhatsApp AI Agent is now:
 
-**Fully automated - no manual intervention required!** 🚀
-#   w h a t s a p p - a g e n t 
- 
- 
+* ✅ Receiving messages automatically
+* ✅ Processing conversations with AI
+* ✅ Sending responses automatically
+* ✅ Maintaining conversation context
+* ✅ Handling multiple users simultaneously
+
+**Fully automated — no manual intervention required! 🚀**
