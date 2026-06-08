@@ -182,30 +182,37 @@ whatsapp-agents/
 ## 🔑 Key Features Explained
 
 ### Debouncing (3-second delay)
+
 Prevents multiple AI responses when user sends rapid messages. Waits 3 seconds after last message before generating response.
 
 ### Chunked Summarization
+
 Every 20 messages are automatically summarized into a rolling summary (≤150 words). Keeps context manageable for LLM.
 
 ### Context Building
+
 - **Short-term**: Last 20 unsummarized messages
 - **Long-term**: Mem0 memories + conversation summary
 - **Result**: AI has full context without token overflow
 
 ### Multi-Account Support
+
 Each WhatsApp Business account has its own credentials. System identifies account by `phone_number_id` from webhook.
 
 ## 🐛 Troubleshooting
 
 ### Webhook verification fails
+
 - Check `WHATSAPP_VERIFY_TOKEN` in `.env` matches Meta console
 
 ### Bot doesn't respond
+
 - Check `GEMINI_API_KEY` and `MEM0_API_KEY` are valid
 - Check database connection
 - Check server logs for errors
 
 ### Message not saved
+
 - Verify database is running
 - Check `DATABASE_URL` is correct
 - Run migrations: `alembic upgrade head`
@@ -213,20 +220,24 @@ Each WhatsApp Business account has its own credentials. System identifies accoun
 ## 📊 API Endpoints
 
 ### Authentication
+
 - `POST /users/register` - Register new user
 - `POST /users/login` - Login and get JWT token
 
 ### WhatsApp Accounts
+
 - `POST /account/create` - Register WhatsApp Business account
 - `GET /account/{id}` - Get account details
 
 ### Messages (Webhook)
+
 - `GET /message/webhook` - Webhook verification
 - `POST /message/webhook` - Receive incoming messages
 
 ## 🤝 Contributing
 
 This is a production-ready system. Follow the existing code patterns:
+
 - Async/await for all I/O operations
 - Service layer for business logic
 - Pydantic for validation
@@ -239,6 +250,7 @@ This is a production-ready system. Follow the existing code patterns:
 ## 🎉 Success!
 
 Your WhatsApp AI agent is now:
+
 - ✅ Receiving messages automatically
 - ✅ Processing with AI intelligence
 - ✅ Sending responses automatically
@@ -246,5 +258,6 @@ Your WhatsApp AI agent is now:
 - ✅ Handling multiple users simultaneously
 
 **Fully automated - no manual intervention required!** 🚀
-#   w h a t s a p p - a g e n t  
+#   w h a t s a p p - a g e n t 
+ 
  

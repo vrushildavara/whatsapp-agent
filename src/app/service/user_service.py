@@ -136,7 +136,7 @@ class UserService:
             self.model.name,
             self.model.email,
             self.model.password,
-            self.model.api_key,
+            self.model.created_at,
         ).where(self.model.email == data.email)
         result = await self.db.execute(stmt)
         user = result.mappings().one_or_none()
@@ -144,13 +144,20 @@ class UserService:
         if not user or not verify_password(data.password, user["password"]):
             return None
 
-        token = create_access_token({"user_id": user["id"], "email": user["email"]})
-        user_dict = dict(user)
-        del user_dict["password"]
-        user_dict["token"] = token
-        user_dict["api_key"] = decrypt_api_key(user["api_key"])  # Decrypt for response
-
-        return user_dict
+        access_token = create_access_token({"user_id": user["id"], "email": user["email"]})
+        
+        created_at = user["created_at"] if user["created_at"] else datetime.now(timezone.utc)
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user["id"],
+                "name": user["name"],
+                "email": user["email"],
+                "created_at": created_at.isoformat() if isinstance(created_at, datetime) else created_at,
+            }
+        }
 
     async def get_user_by_id(self, user_id: int) -> dict | None:
         stmt = select(self.model.id, self.model.name, self.model.email).where(
